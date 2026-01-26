@@ -1,0 +1,10 @@
+{
+	"capi": false,
+	"https": false,
+	"fallbackImage": "",
+	"framework": "svelte",
+	"includeData": false,
+	"layout": "bleed",
+	"slug": "shadowfleet",
+	"uuid": "b1f6691f-99fd-4b41-babb-9decf27a06fa"
+}

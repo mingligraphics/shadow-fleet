@@ -1,0 +1,39 @@
+{
+	"name": "shadowfleet",
+	"version": "3.0.0",
+	"description": "",
+	"main": "src/index.js",
+	"scripts": {
+		"start": "NODE_ENV=serve webpack serve",
+		"deploy": "node lib/deploy.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"capi-generator": "0.1.20",
+		"clean-webpack-plugin": "4.0.0",
+		"css-loader": "6.5.1",
+		"css-minimizer-webpack-plugin": "7.0.2",
+		"html-webpack-plugin": "5.6.4",
+		"image-size": "2.0.2",
+		"kleur": "4.1.4",
+		"mini-css-extract-plugin": "2.9.4",
+		"prompts": "2.4.2",
+		"style-loader": "4.0.0",
+		"superagent": "10.2.3",
+		"svelte": "5.48.2",
+		"svelte-loader": "3.2.4",
+		"terser-webpack-plugin": "5.3.14",
+		"webpack": "5.101.3",
+		"webpack-cli": "6.0.1",
+		"webpack-dev-server": "5.2.2"
+	},
+	"devDependencies": {
+		"@babel/core": "7.28.4",
+		"@babel/plugin-transform-runtime": "7.28.3",
+		"@babel/preset-env": "7.28.3",
+		"babel-loader": "10.0.0",
+		"prettier": "3.6.2"
+	}
+}
