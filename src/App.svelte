@@ -132,7 +132,7 @@
     // Adjust collision radius for mobile
     const isMobile = width < 450;
     const collisionScale = isMobile ? 0.6 : 1;
-    const chargeStrength = isMobile ? -0.5 : -1.2; // Stronger repulsion on larger screens
+    const chargeStrength = isMobile ? -0.5 : -1.5; // Stronger repulsion on larger screens
     
     switch(step) {
       case 0:
@@ -194,10 +194,12 @@
         break;
         
       case 5:
+        const xMargin = isMobile ? 0.15 : 0.05; // Tighter margins on desktop
+        const xRange = isMobile ? 0.7 : 0.9; // Wider spread on desktop
         simulation
           .force('x', forceX(d => {
             const yearProgress = (d.sanctionYear - 2004) / 20;
-            return width * 0.15 + (width * 0.7 * yearProgress);
+            return width * xMargin + (width * xRange * yearProgress);
           }).strength(0.15))
           .force('y', forceY(d => {
             return height / 2 + (Math.random() - 0.5) * height * 0.5;
