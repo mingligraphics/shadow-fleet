@@ -7,11 +7,11 @@
   
     $: steps = [
       `There are 1300 plus shadow fleet vessels`,
-      `Most of them have flags from five countries`,
+      `Most of them have flags from four countries`,
       `We are grouping them based on their ages`,
       `by their sizes`,
       `by countries who sanctioned them`,
-      `Timeline of when they were sanctioned last time`
+      `Most of the sanctions happened after 2020. Here are when they were sanctioned last time`
     ];
   
   </script>

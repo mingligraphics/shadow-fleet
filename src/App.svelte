@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { forceSimulation, forceX, forceY, forceCollide, forceManyBody } from 'd3-force';
   import Steps from './components/steps.svelte';
+  import data from "./data/shadowfleet.json";
   
   let canvas;
   let ctx;
@@ -13,29 +14,58 @@
   let animationFrame;
   let mounted = false;
   
-  const TOTAL_VESSELS = 1300;
-  
-  // Define vessel properties
-  const FLAGS = ['Panama', 'Liberia', 'Marshall Islands', 'Gabon', 'Other'];
-  const AGE_GROUPS = ['0-5 years', '6-10 years', '11-15 years', '16+ years'];
-  const SIZE_GROUPS = ['Small', 'Medium', 'Large', 'Very Large', 'Mega'];
+  // Define vessel properties - will be populated from JSON
+  let FLAGS = [];
+  let SIZE_GROUPS = [];
   const SANCTIONING_BODIES = ['USA', 'EU', 'UK', 'UN', 'Other'];
+  const AGE_GROUPS = ['0-10 years', '11-20 years', '21-30 years', '31+ years'];
   
   // Color palettes
-  const FLAG_COLORS = ['#E63946', '#F77F00', '#06AED5', '#118AB2', '#073B4C'];
+  let FLAG_COLORS = {};
+  let SIZE_COLORS = {};
   const AGE_COLORS = ['#90E0EF', '#00B4D8', '#0077B6', '#03045E'];
-  const SIZE_COLORS = ['#FFB703', '#FB8500', '#E85D04', '#DC2F02', '#9D0208'];
   const SANCTION_COLORS = ['#2A9D8F', '#E76F51', '#F4A261', '#E9C46A', '#264653'];
   
-  // Initialize vessels with properties
+  // Helper function to get age group index
+  function getAgeGroupIndex(age) {
+    if (age <= 10) return 0;
+    if (age <= 20) return 1;
+    if (age <= 30) return 2;
+    return 3;
+  }
+  
+  // Initialize dots from JSON data
   function initializeDots() {
-    dots = Array.from({ length: TOTAL_VESSELS }, (_, i) => {
-      const flagIndex = i < 260 ? 0 : i < 520 ? 1 : i < 780 ? 2 : i < 1040 ? 3 : 4;
-      const ageIndex = Math.floor(Math.random() * AGE_GROUPS.length);
-      const sizeIndex = Math.floor(Math.random() * SIZE_GROUPS.length);
-      const sanctionIndex = Math.floor(Math.random() * SANCTIONING_BODIES.length);
-      const sanctionYear = 2004 + Math.floor(Math.random() * 21);
-      const randomSize = Math.floor(Math.random() * 5) + 1; // Random 1-5
+    console.log(`Loading ${data.length} vessels from JSON`);
+    
+    // Extract unique flags and sizes from data
+    const uniqueFlags = [...new Set(data.map(d => d.flag_country))].filter(f => f);
+    const uniqueSizes = [...new Set(data.map(d => d.size_category))].filter(s => s);
+    
+    FLAGS = uniqueFlags;
+    SIZE_GROUPS = uniqueSizes;
+    
+    console.log('Unique flags:', FLAGS);
+    console.log('Unique sizes:', SIZE_GROUPS);
+    
+    // Create color mappings
+    const flagColorPalette = ['#E63946', '#F77F00', '#06AED5', '#118AB2', '#073B4C', '#6A4C93', '#1982C4'];
+    const sizeColorPalette = ['#FFB703', '#FB8500', '#E85D04', '#DC2F02', '#9D0208', '#D62828'];
+    
+    FLAGS.forEach((flag, i) => {
+      FLAG_COLORS[flag] = flagColorPalette[i % flagColorPalette.length];
+    });
+    
+    SIZE_GROUPS.forEach((size, i) => {
+      SIZE_COLORS[size] = sizeColorPalette[i % sizeColorPalette.length];
+    });
+    
+    // Convert JSON data to dots
+    dots = data.map((vessel, i) => {
+      const flagIndex = FLAGS.indexOf(vessel.flag_country);
+      const ageIndex = getAgeGroupIndex(vessel.age_years);
+      const sizeIndex = SIZE_GROUPS.indexOf(vessel.size_category);
+      const sanctionIndex = SANCTIONING_BODIES.indexOf(vessel.sanctioned_by);
       
       return {
         id: i,
@@ -43,20 +73,25 @@
         y: Math.random() * height,
         vx: 0,
         vy: 0,
-        radius: 2.5,
-        flag: FLAGS[flagIndex],
-        flagIndex,
-        age: AGE_GROUPS[ageIndex],
+        
+        // From JSON
+        vesselName: vessel.vessel_name,
+        flag: vessel.flag_country,
+        flagIndex: flagIndex >= 0 ? flagIndex : 0,
+        age: vessel.age_years,
         ageIndex,
-        size: SIZE_GROUPS[sizeIndex],
-        sizeIndex,
-        sanctionedBy: SANCTIONING_BODIES[sanctionIndex],
-        sanctionIndex,
-        sanctionYear,
-        randomSize
+        size: vessel.size_category,
+        sizeIndex: sizeIndex >= 0 ? sizeIndex : 0,
+        sanctionedBy: vessel.sanctioned_by,
+        sanctionIndex: sanctionIndex >= 0 ? sanctionIndex : 0,
+        sanctionYear: vessel.sanction_year,
+        latestSanctionYear: vessel.latest_sanction_year,
+        sanctionCount: vessel.sanction_count
       };
     });
+    
     console.log(`Initialized ${dots.length} dots`);
+    console.log('Sample dot:', dots[0]);
   }
   
   // Setup high-DPI canvas
@@ -89,15 +124,15 @@
       case 0:
         return '#4A90E2';
       case 1:
-        return FLAG_COLORS[dot.flagIndex];
+        return FLAG_COLORS[dot.flag] || '#073B4C';
       case 2:
         return AGE_COLORS[dot.ageIndex];
       case 3:
-        return SIZE_COLORS[dot.sizeIndex];
+        return SIZE_COLORS[dot.size] || '#9D0208';
       case 4:
         return SANCTION_COLORS[dot.sanctionIndex];
       case 5:
-        const yearProgress = (dot.sanctionYear - 2004) / 20;
+        const yearProgress = (dot.latestSanctionYear - 2004) / 21;
         return `hsl(${240 - yearProgress * 120}, 70%, 60%)`;
       default:
         return '#4A90E2';
@@ -106,15 +141,14 @@
   
   // Get radius for dot based on step
   function getDotRadius(dot, step) {
-    // Scale down on mobile
     const isMobile = width < 450;
     const mobileScale = isMobile ? 0.6 : 1;
     
-    if (step === 5) {
-      // Scale radius based on random size (1-5)
-      return (1.5 + dot.randomSize * 0.8) * mobileScale; // Radius from 2.3 to 5.5
+    if (step === 4 || step === 5) {
+      // Scale radius based on sanction count (1-9)
+      return (1.5 + (dot.sanctionCount - 1) * 0.5) * mobileScale;
     }
-    return 2.5 * mobileScale; // Default radius for other steps
+    return 2.5 * mobileScale;
   }
   
   // Update simulation based on current step
@@ -129,10 +163,9 @@
     
     simulation = forceSimulation(dots);
     
-    // Adjust collision radius for mobile
     const isMobile = width < 450;
     const collisionScale = isMobile ? 0.6 : 1;
-    const chargeStrength = isMobile ? -0.5 : -1.5; // Stronger repulsion on larger screens
+    const chargeStrength = isMobile ? -0.5 : -1.5;
     
     switch(step) {
       case 0:
@@ -146,7 +179,7 @@
       case 1:
         simulation
           .force('x', forceX(d => {
-            const spacing = width / 6;
+            const spacing = width / (FLAGS.length + 1);
             return spacing * (d.flagIndex + 1);
           }).strength(0.1))
           .force('y', forceY(height / 2).strength(0.1))
@@ -189,16 +222,16 @@
             const row = Math.floor(d.sanctionIndex / 3);
             return height * 0.3 + (row * height * 0.35);
           }).strength(0.1))
-          .force('collide', forceCollide(3 * collisionScale))
+          .force('collide', forceCollide(d => getDotRadius(d, 4) + 1))
           .force('charge', forceManyBody().strength(chargeStrength));
         break;
         
       case 5:
-        const xMargin = isMobile ? 0.15 : 0.05; // Tighter margins on desktop
-        const xRange = isMobile ? 0.7 : 0.9; // Wider spread on desktop
+        const xMargin = isMobile ? 0.15 : 0.05;
+        const xRange = isMobile ? 0.7 : 0.9;
         simulation
           .force('x', forceX(d => {
-            const yearProgress = (d.sanctionYear - 2004) / 20;
+            const yearProgress = (d.latestSanctionYear - 2020) / 6;
             return width * xMargin + (width * xRange * yearProgress);
           }).strength(0.15))
           .force('y', forceY(d => {
@@ -254,13 +287,6 @@
     const handleResize = () => {
       setupCanvas();
       if (dots.length > 0) {
-        // Reposition dots proportionally
-        const oldWidth = width;
-        const oldHeight = height;
-        dots.forEach(dot => {
-          dot.x = (dot.x / oldWidth) * width;
-          dot.y = (dot.y / oldHeight) * height;
-        });
         updateSimulation(currentStep);
       }
     };
@@ -283,12 +309,12 @@
 <main>
   <section>
     <div class="sticky">
-  <div class="canvas-container">
-    <canvas bind:this={canvas}></canvas>
-  </div>
+      <div class="canvas-container">
+        <canvas bind:this={canvas}></canvas>
+      </div>
     </div>
-  <Steps bind:currentStep />
-</section>
+    <Steps bind:currentStep />
+  </section>
 </main>
 
 <style>
@@ -300,9 +326,6 @@
   }
   
   main {
-    /* position: relative;
-    width: 100%;
-    min-height: 100vh; */
     max-width: 1200px;
     margin: 0 auto;
   }
@@ -312,13 +335,6 @@
   }
   
   .canvas-container {
-    /* position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    pointer-events: none;
-    z-index: 1; */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -327,7 +343,7 @@
     margin: auto;
   }
 
-    .sticky {
+  .sticky {
     position: sticky;
     z-index: 1;
     height: 90vh;
