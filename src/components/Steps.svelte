@@ -3,12 +3,11 @@
     import Scrolly from "../helpers/Scrolly.svelte";
   
     $: steps = [
-    `There are 1300 shadow fleet vessels`,
     `Most of them have flags from five countries, here are five groups, including four major countries and one other`,
     `We are grouping them based on their ages, altogether four groups`,
     `We are now grouping them based on their sizes, about five groups`,
-    `Here are how they are grouped based on who sanctioned them, about five groups`,
-    `Here's how it looks if we put them in a timeline of when they were sanctioned in the past 20 years`
+    `Here are how they are grouped based on who sanctioned them. The size of each bubble represents the number of sanctions, from smallest (1 sanction) to largest (9 sanctions).`,
+    `Here's how it looks if we put them in a timeline of when they were sanctioned in the past 20 years. Bubble size shows the number of sanctions each vessel has received.`
   ];
   
   </script>

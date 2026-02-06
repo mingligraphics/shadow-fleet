@@ -17,7 +17,7 @@
   // Define vessel properties - will be populated from JSON
   let FLAGS = [];
   let SIZE_GROUPS = [];
-  const SANCTIONING_BODIES = ['U.S.', 'U.K.', 'EU', 'Other'];
+  const SANCTIONING_BODIES = ['EU', 'U.K.', 'U.S.', 'Other'];
   const AGE_GROUPS = ['0-10 years', '11-20', '21-30', '31 and more'];
   
   // Color palettes from WSJ style guide
@@ -30,10 +30,9 @@
   let SIZE_COLORS = {};
   const AGE_COLORS = ['#88c9d7', '#00b3c9', '#0091a2', '#727272']; // 0-10 lightest, 21-30 darkest peacock, 31+ gray
   const SANCTION_COLORS = {
-    'USA': '#76BCE8',
+    'U.S.': '#00b3c9',
     'EU': '#dc6c00',    // Ginger
-    'UK': '#e8ac76',    // Lighter ginger
-    'UN': '#0091a2',    // Will be assigned
+    'U.K.': '#e8ac76',    // Lighter ginger
     'Other': '#727272'  // Gray
   };
   
@@ -45,33 +44,18 @@
     return 3;
   }
   
-  // Helper function to draw text with white background
+  // Helper function to draw text with white outline/stroke
   function drawTextWithBackground(text, x, y, fontSize = 15, textAlign = 'center') {
     ctx.font = `${fontSize}px Retina, sans-serif`;
     ctx.textAlign = textAlign;
     ctx.textBaseline = 'middle';
     
-    // Measure text
-    const metrics = ctx.measureText(text);
-    const textWidth = metrics.width;
-    const textHeight = fontSize * 1.2; // Approximate height
+    // Draw white outline/stroke around text
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 4; // Thickness of the white outline
+    ctx.strokeText(text, x, y);
     
-    // Calculate background position based on text alignment
-    let bgX = x;
-    if (textAlign === 'center') {
-      bgX = x - textWidth / 2;
-    } else if (textAlign === 'right') {
-      bgX = x - textWidth;
-    }
-    
-    const bgY = y - textHeight / 2;
-    const padding = 4;
-    
-    // Draw white background
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(bgX - padding, bgY - padding, textWidth + padding * 2, textHeight + padding * 2);
-    
-    // Draw text
+    // Draw the actual text on top
     ctx.fillStyle = '#333';
     ctx.fillText(text, x, y);
   }
@@ -114,7 +98,6 @@
     }
     
     FLAGS = sortedFlags;
-    SIZE_GROUPS = uniqueSizes;
     
     console.log('Flags ordered by size (Other last):', FLAGS, flagCounts);
     console.log('Unique sizes:', SIZE_GROUPS);
@@ -126,7 +109,7 @@
       'Cameroon': '#DC7300',
       'Panama': '#00b3c9',
       'Iran': '#76BCE8',
-      'Other': '#727272'
+      'Other': '#bfbfbf'
     };
     
     // Map sizes to Ginger colors (bigger = darker)
@@ -135,7 +118,7 @@
       'Suezmax': '#b25200',
       'Aframax': '#dc6c00',
       'Handysize/Handymax': '#e8ac76',
-      'Other': '#727272'
+      'Other': '#bfbfbf'
     };
     
     FLAGS.forEach((flag) => {
@@ -220,16 +203,14 @@
   function getDotColor(dot, step) {
     switch(step) {
       case 0:
-        return '#00b3c9'; // Peacock
-      case 1:
         return FLAG_COLORS[dot.flag] || '#00b3c9';
-      case 2:
+      case 1:
         return AGE_COLORS[dot.ageIndex];
-      case 3:
+      case 2:
         return SIZE_COLORS[dot.size] || '#727272';
-      case 4:
+      case 3:
         return SANCTION_COLORS[dot.sanctionedBy] || '#727272';
-      case 5:
+      case 4:
         // Timeline colors: all ginger shades, 2020 lightest to 2026 darkest
         const yearsSince2020 = Math.max(0, Math.min(dot.latestSanctionYear - 2020, 6));
         return TIMELINE_COLORS[yearsSince2020];
@@ -243,7 +224,7 @@
     const isMobile = width < 450;
     const mobileScale = isMobile ? 0.6 : 1;
     
-    if (step === 4 || step === 5) {
+    if (step === 3 || step === 4) {
       // Scale radius based on sanction count (1-9)
       return (1.5 + (dot.sanctionCount - 1) * 0.5) * mobileScale;
     }
@@ -269,14 +250,6 @@
     switch(step) {
       case 0:
         simulation
-          .force('x', forceX(width / 2).strength(0.05))
-          .force('y', forceY(height / 2).strength(0.05))
-          .force('collide', forceCollide(4 * collisionScale))
-          .force('charge', forceManyBody().strength(chargeStrength));
-        break;
-        
-      case 1:
-        simulation
           .force('x', forceX(d => {
             const spacing = width / (FLAGS.length + 1.5); // More spacing
             const baseX = spacing * (d.flagIndex + 1);
@@ -288,7 +261,7 @@
           .force('charge', forceManyBody().strength(chargeStrength));
         break;
         
-      case 2:
+      case 1:
         simulation
           .force('x', forceX(width / 2).strength(0.05))
           .force('y', forceY(d => {
@@ -299,7 +272,7 @@
           .force('charge', forceManyBody().strength(chargeStrength));
         break;
         
-      case 3:
+      case 2:
         simulation
           .force('x', forceX(d => {
             const angle = (d.sizeIndex / SIZE_GROUPS.length) * Math.PI * 2 - Math.PI / 2; // Start from top
@@ -313,19 +286,21 @@
           .force('charge', forceManyBody().strength(chargeStrength));
         break;
         
-      case 4:
+      case 3:
         simulation
           .force('x', forceX(d => {
-            const spacing = width / (SANCTIONING_BODIES.length + 1.5);
-            const baseX = spacing * (d.sanctionIndex + 1);
-            return Math.max(60, Math.min(width - 60, baseX));
+            const angle = (d.sanctionIndex / SANCTIONING_BODIES.length) * Math.PI * 2 - Math.PI / 2; // Start from top
+            return width / 2 + Math.cos(angle) * (Math.min(width, height) * 0.18);
           }).strength(0.1))
-          .force('y', forceY(height / 2).strength(0.1))
-          .force('collide', forceCollide(d => getDotRadius(d, 4) + 1))
+          .force('y', forceY(d => {
+            const angle = (d.sanctionIndex / SANCTIONING_BODIES.length) * Math.PI * 2 - Math.PI / 2; // Start from top
+            return height / 2 + Math.sin(angle) * (Math.min(width, height) * 0.18);
+          }).strength(0.1))
+          .force('collide', forceCollide(d => getDotRadius(d, 3) + 1))
           .force('charge', forceManyBody().strength(chargeStrength));
         break;
         
-      case 5:
+      case 4:
         const xMargin = isMobile ? 0.15 : 0.05;
         const xRange = isMobile ? 0.7 : 0.9;
         simulation
@@ -336,7 +311,7 @@
           .force('y', forceY(d => {
             return height / 2 + (Math.random() - 0.5) * height * 0.5;
           }).strength(0.08))
-          .force('collide', forceCollide(d => getDotRadius(d, 5) + 1))
+          .force('collide', forceCollide(d => getDotRadius(d, 4) + 1))
           .force('charge', forceManyBody().strength(-0.3));
         break;
         
@@ -373,7 +348,7 @@
     ctx.fillStyle = '#333';
     
     switch(currentStep) {
-      case 1: // Flag labels - in the middle of groups with white background and counts
+      case 0: // Flag labels - in the middle of groups with white background and counts
         // Calculate counts for each flag
         const flagCounts = {};
         FLAGS.forEach(flag => {
@@ -396,20 +371,18 @@
         });
         break;
         
-      case 2: // Age labels - left edge, spaced out more
+      case 1: // Age labels - left edge, spaced out more
         AGE_GROUPS.forEach((ageGroup, i) => {
-          const spacing = height / 5;
+          const spacing = height / 4.5; // More spacing between groups
           const x = 15; // Left edge
-          let y = spacing * (i + 1) - 50; // Offset to align with group edge
+          let y = spacing * (i + 1);
           
-          // Move 21-30 down a bit
-          if (ageGroup === '21-30') {
-            y += 20;
+          // Move first three groups up
+          if (i < 2) {
+            y -= 65;
           }
-          
-          // Move 31 and more down more
-          if (ageGroup === '31 and more') {
-            y += 60;
+          if (i == 2) {
+            y -= 25;
           }
           
           ctx.textAlign = 'left';
@@ -418,46 +391,33 @@
         ctx.textAlign = 'center'; // Reset
         break;
         
-      case 3: // Size labels (circular) - adjusted positions
+      case 2: // Size labels (circular) - centered in groups with white background
+        // Map size categories to tonnage ranges
+        const tonnageInfo = {
+          'Handysize/Handymax': '15,000-60,000 deadweight tonnage',
+          'Aframax': '80,000-120,000',
+          'Suezmax': '120,000-200,000',
+          'VLCC/ULCC': 'more than 200,000'
+        };
+        
         SIZE_GROUPS.forEach((size, i) => {
           const angle = (i / SIZE_GROUPS.length) * Math.PI * 2 - Math.PI / 2; // Start from top
-          const labelRadius = Math.min(width, height) * 0.4;
-          let x = width / 2 + Math.cos(angle) * labelRadius;
-          let y = height / 2 + Math.sin(angle) * labelRadius;
+          const labelRadius = Math.min(width, height) * 0.25; // Match dot positioning radius
+          const x = width / 2 + Math.cos(angle) * labelRadius;
+          const y = height / 2 + Math.sin(angle) * labelRadius;
           
-          // Desktop adjustments
-          if (!isMobile) {
-            if (size === 'Aframax') {
-              x += 90; // Move to the right further
-              y += 60; // Move down more for desktop
-            } else if (size === 'Handysize/Handymax') {
-              y += 130; // Move down more
-            } else if (size === 'VLCC/ULCC') {
-              y += 50; // Move down more
-            } else if (size === 'Suezmax') {
-              y -= 30; // Move up more
-            } else if (size === 'Other') {
-              y += 30; // Move down more
-            }
-          } else {
-            // Mobile adjustments
-            if (size === 'Handysize/Handymax') {
-              x += 60; // Move to the right
-              y -= 10;
-            } else if (size === 'Aframax') {
-              y += 40; // Move down
-            } else if (size === 'Suezmax' || size === 'Other') {
-              y -= 20; // Move up a bit for mobile
-            } else if (size === 'VLCC/ULCC') {
-              y += 20; // Move down a bit
-            }
+          // Draw size label with white background
+          drawTextWithBackground(size, x, y, fontSize);
+          
+          // Draw tonnage info below if available
+          if (tonnageInfo[size]) {
+            const smallerFontSize = isMobile ? 9 : 11;
+            drawTextWithBackground(tonnageInfo[size], x, y + fontSize + 6, smallerFontSize);
           }
-          
-          ctx.fillText(size, x, y);
         });
         break;
         
-      case 4: // Sanction body labels - horizontal layout like step 1
+      case 3: // Sanction body labels - circular layout, centered in groups
         // Calculate counts for each sanctioning body
         const sanctionCounts = {};
         SANCTIONING_BODIES.forEach(body => {
@@ -465,9 +425,10 @@
         });
         
         SANCTIONING_BODIES.forEach((body, i) => {
-          const spacing = width / (SANCTIONING_BODIES.length + 1.5);
-          const x = spacing * (i + 1);
-          const y = height / 2; // Middle of the group
+          const angle = (i / SANCTIONING_BODIES.length) * Math.PI * 2 - Math.PI / 2; // Start from top
+          const labelRadius = Math.min(width, height) * 0.18; // Match dot positioning radius
+          const x = width / 2 + Math.cos(angle) * labelRadius;
+          const y = height / 2 + Math.sin(angle) * labelRadius;
           
           // Draw body name with white background
           drawTextWithBackground(body, x, y, fontSize);
@@ -478,7 +439,7 @@
         });
         break;
         
-      case 5: // Timeline labels with Retina Narrow font
+      case 4: // Timeline labels with Retina Narrow font
         const startYear = 2020;
         const endYear = 2026;
         const xMargin = isMobile ? 0.15 : 0.05;
@@ -496,18 +457,79 @@
           // Format year label
           let yearLabel;
           if (year === 2020) {
-            yearLabel = '2014-20';
+            yearLabel = "2016-'20";
           } else {
             yearLabel = `'${year.toString().slice(-2)}`;
           }
           
           ctx.fillText(yearLabel, x, y);
         }
+
+                // Add annotation for 2025
+        const vessels2025Count = dots.filter(d => d.latestSanctionYear === 2025).length;
+        const year2025Progress = (2025 - startYear) / 6;
+        const x2025 = width * xMargin + (width * xRange * year2025Progress);
+
+        // Annotation text at top
+        const annotationY = isMobile ? 30 : 50;
+        ctx.font = `${isMobile ? 11 : 13}px Retina, sans-serif`;
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+        const annotationText = `${vessels2025Count} vessels were last sanctioned last year`;
+        ctx.fillText(annotationText, width * 3 / 4, annotationY);
+
+        // Draw line from annotation to 2025 bubbles
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x2025, annotationY + 10);
+        ctx.lineTo(x2025, annotationY + 30);
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset to solid line
         
         // Reset font for next render
         ctx.font = `${fontSize}px Retina, sans-serif`;
         ctx.fillStyle = '#333';
         break;
+    }
+    
+    // Draw legend for steps 3 and 4 (bubble size represents sanction count)
+    if (currentStep === 3 || currentStep === 4) {
+      const legendX = isMobile ? 15 : 20;
+      const legendY = isMobile ? 20 : 30;
+      const bubbleSpacing = isMobile ? 20 : 25;
+      
+      ctx.font = `${isMobile ? 10 : 12}px Retina, sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#666';
+      
+      // Legend title
+      ctx.fillText('Number of sanctions', legendX, legendY);
+      
+      // Draw sample bubbles horizontally
+      const sampleCounts = [1, 3, 5, 9];
+      const sampleLabels = ['1', '3', '5', '9'];
+      const maxRadius = (1.5 + (9 - 1) * 0.5) * (isMobile ? 0.6 : 1); // Largest bubble
+      
+      sampleCounts.forEach((count, i) => {
+        const x = legendX + bubbleSpacing * i;
+        const y = legendY + 20; // Fixed vertical position for all bubbles
+        const radius = (1.5 + (count - 1) * 0.5) * (isMobile ? 0.6 : 1);
+        
+        // Draw sample bubble
+        ctx.beginPath();
+        ctx.arc(x + 10, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#bbb';
+        ctx.fill();
+        
+        // Draw label underneath - aligned to bottom
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#666';
+        ctx.fillText(sampleLabels[i], x + 10, y + maxRadius + 12);
+      });
+      
+      // Reset text align
+      ctx.textAlign = 'center';
     }
     
     animationFrame = requestAnimationFrame(render);
