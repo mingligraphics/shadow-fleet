@@ -465,27 +465,29 @@
           ctx.fillText(yearLabel, x, y);
         }
 
-                // Add annotation for 2025
-        const vessels2025Count = dots.filter(d => d.latestSanctionYear === 2025).length;
-        const year2025Progress = (2025 - startYear) / 6;
-        const x2025 = width * xMargin + (width * xRange * year2025Progress);
+// Add annotation for 2025 (desktop only)
+if (!isMobile) {
+  const vessels2025Count = dots.filter(d => d.latestSanctionYear === 2025).length;
+  const year2025Progress = (2025 - startYear) / 6;
+  const x2025 = width * xMargin + (width * xRange * year2025Progress);
 
-        // Annotation text at top
-        const annotationY = isMobile ? 30 : 50;
-        ctx.font = `${isMobile ? 11 : 13}px Retina, sans-serif`;
-        ctx.fillStyle = '#333';
-        ctx.textAlign = 'center';
-        const annotationText = `${vessels2025Count} vessels were last sanctioned last year`;
-        ctx.fillText(annotationText, width * 3 / 4, annotationY);
+  // Annotation text at top
+  const annotationY = 80;
+  ctx.font = '13px Retina, sans-serif';
+  ctx.fillStyle = '#333';
+  ctx.textAlign = 'center';
+  const annotationText = `${vessels2025Count} vessels`;
+  ctx.fillText(annotationText, width * 3 / 4, annotationY);
+}
 
         // Draw line from annotation to 2025 bubbles
-        ctx.strokeStyle = '#666';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x2025, annotationY + 10);
-        ctx.lineTo(x2025, annotationY + 30);
-        ctx.stroke();
-        ctx.setLineDash([]); // Reset to solid line
+        // ctx.strokeStyle = '#666';
+        // ctx.lineWidth = 1;
+        // ctx.beginPath();
+        // ctx.moveTo(x2025, annotationY + 10);
+        // ctx.lineTo(x2025, annotationY + 30);
+        // ctx.stroke();
+        // ctx.setLineDash([]); 
         
         // Reset font for next render
         ctx.font = `${fontSize}px Retina, sans-serif`;
@@ -496,7 +498,7 @@
     // Draw legend for steps 3 and 4 (bubble size represents sanction count)
     if (currentStep === 3 || currentStep === 4) {
       const legendX = isMobile ? 15 : 20;
-      const legendY = isMobile ? 20 : 30;
+      const legendY = isMobile ? 30 : 90;
       const bubbleSpacing = isMobile ? 20 : 25;
       
       ctx.font = `${isMobile ? 10 : 12}px Retina, sans-serif`;
@@ -619,11 +621,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    padding-bottom: 40px; /* Add padding for year labels */
   }
   
   canvas {
-    width: 100%;
-    height: 100%;
+    width: 90vh; /* Match height */
+    height: 90vh;
     max-width: 100%;
     max-height: 100%;
     aspect-ratio: 1 / 1;

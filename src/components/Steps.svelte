@@ -3,11 +3,21 @@
     import Scrolly from "../helpers/Scrolly.svelte";
   
     $: steps = [
-    `Most of them have flags from five countries, here are five groups, including four major countries and one other`,
-    `We are grouping them based on their ages, altogether four groups`,
-    `We are now grouping them based on their sizes, about five groups`,
-    `Here are how they are grouped based on who sanctioned them. The size of each bubble represents the number of sanctions, from smallest (1 sanction) to largest (9 sanctions).`,
-    `Here's how it looks if we put them in a timeline of when they were sanctioned in the past 20 years. Bubble size shows the number of sanctions each vessel has received.`
+    `As of January 21st, there were 1,308 tankers sanctioned by different authorities. 
+    Merchant vessels must officially register a flag state under whose laws they agree to operate. 
+    Shadow fleet tankers frequently adopt flags of convenience due to insurance requirements or safety standards. 
+    Many also reflag to Russia seeking protection against U.S. interception and drone attacks.`,
+    `Shadow fleet vessels’ advanced age and poor repair make them vulnerable to mechanical failures and catastrophic leaks. 
+    Shadow fleet ships’ lack of insurance means that, should a spill occur, Western states could be forced to pay for the cleanup out of their own budgets, 
+    creating a fiscal crisis.<br>The mean age of shadow fleet ships in our dataset was 19.0 years old, much higher than the average of 12.4 years for ships outside the shadow fleet.`,
+    `Voyage distance determines which size tanker would be more economical to use. 
+    On long voyages, a tanker spends a greater portion of total voyage time at sea as opposed to loading or unloading in port, 
+    so larger tankers that can carry more cargo would be more economical. Since shorter voyages entail a greater portion of total voyage time in port, 
+    smaller vessels that can load and unload more quickly are often more economical.`,
+    `Following the Russian invasion of Ukraine in February 2022, the United States, United Kingdom, European Union, and their allies levied a barrage of sanctions on the Russian Federation. 
+    Russia’s energy industry has been the main target of these sanctions, and for good reason. Exports of fossil fuels, particularly crude oil, drive Russia’s economy.`,
+    `Between January and December 2025, vessel sanctions increased 77% year-over-year—over 700 first-time designations in twelve months. Despite designating hundreds of shadow fleet tankers, 
+    the fleet didn't shrink—it adapted. They modified behaviour, employing increasingly sophisticated deceptive practices to continue operations.`
   ];
   
   </script>
