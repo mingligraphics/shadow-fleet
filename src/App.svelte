@@ -13,11 +13,13 @@
   let simulation;
   let animationFrame;
   let mounted = false;
+  let vesselIcon;
+  let vesselIconLoaded = false;
   
   // Define vessel properties - will be populated from JSON
   let FLAGS = [];
   let SIZE_GROUPS = [];
-  const SANCTIONING_BODIES = ['EU', 'U.K.', 'U.S.', 'Other'];
+  const SANCTIONING_BODIES = ['U.S.', 'U.K.', 'EU', 'Other'];
   const AGE_GROUPS = ['0-10 years', '11-20', '21-30', '31 and more'];
   
   // Color palettes from WSJ style guide
@@ -30,7 +32,7 @@
   let SIZE_COLORS = {};
   const AGE_COLORS = ['#88c9d7', '#00b3c9', '#0091a2', '#727272']; // 0-10 lightest, 21-30 darkest peacock, 31+ gray
   const SANCTION_COLORS = {
-    'U.S.': '#00b3c9',
+    'U.S.': '#88C9D7',
     'EU': '#dc6c00',    // Ginger
     'U.K.': '#e8ac76',    // Lighter ginger
     'Other': '#727272'  // Gray
@@ -58,6 +60,21 @@
     // Draw the actual text on top
     ctx.fillStyle = '#333';
     ctx.fillText(text, x, y);
+  }
+  
+  // Load vessel icon
+  function loadVesselIcon() {
+    vesselIcon = new Image();
+    vesselIcon.crossOrigin = 'anonymous';
+    vesselIcon.onload = () => {
+      vesselIconLoaded = true;
+      console.log('Vessel icon loaded successfully');
+    };
+    vesselIcon.onerror = () => {
+      console.error('Failed to load vessel icon');
+      vesselIconLoaded = false;
+    };
+    vesselIcon.src = 'https://images.wsj.net/im-14204877';
   }
   
   // Initialize dots from JSON data
@@ -289,13 +306,11 @@
       case 3:
         simulation
           .force('x', forceX(d => {
-            const angle = (d.sanctionIndex / SANCTIONING_BODIES.length) * Math.PI * 2 - Math.PI / 2; // Start from top
-            return width / 2 + Math.cos(angle) * (Math.min(width, height) * 0.18);
+            const spacing = width / (SANCTIONING_BODIES.length + 1.5);
+            const baseX = spacing * (d.sanctionIndex + 1);
+            return Math.max(60, Math.min(width - 60, baseX));
           }).strength(0.1))
-          .force('y', forceY(d => {
-            const angle = (d.sanctionIndex / SANCTIONING_BODIES.length) * Math.PI * 2 - Math.PI / 2; // Start from top
-            return height / 2 + Math.sin(angle) * (Math.min(width, height) * 0.18);
-          }).strength(0.1))
+          .force('y', forceY(height / 2).strength(0.1))
           .force('collide', forceCollide(d => getDotRadius(d, 3) + 1))
           .force('charge', forceManyBody().strength(chargeStrength));
         break;
@@ -357,7 +372,15 @@
         
         FLAGS.forEach((flag, i) => {
           const spacing = width / (FLAGS.length + 1.5);
-          const x = spacing * (i + 1);
+          let x = spacing * (i + 1);
+          
+          // Adjust positions: first four move left, last one moves right
+          if (i < 4) {
+            x -= 20; // Move first four labels to the left
+          } else if (i === FLAGS.length - 1) {
+            x += 20; // Move last label to the right
+          }
+          
           const y = height / 2; // Middle of the group
           
           // Draw flag name with white background
@@ -391,13 +414,13 @@
         ctx.textAlign = 'center'; // Reset
         break;
         
-      case 2: // Size labels (circular) - centered in groups with white background
+      case 2: // Size labels (circular) - centered in groups with white background and vessel icons
         // Map size categories to tonnage ranges
         const tonnageInfo = {
-          'Handysize/Handymax': '15,000-60,000 deadweight tonnage',
-          'Aframax': '80,000-120,000',
-          'Suezmax': '120,000-200,000',
-          'VLCC/ULCC': 'more than 200,000'
+          'Handysize/Handymax': 'Carrying capacity: less than 400,000 barrels',
+          'Aframax': '750,000',
+          'Suezmax': 'one million',
+          'VLCC/ULCC': 'two to four million'
         };
         
         SIZE_GROUPS.forEach((size, i) => {
@@ -405,6 +428,19 @@
           const labelRadius = Math.min(width, height) * 0.25; // Match dot positioning radius
           const x = width / 2 + Math.cos(angle) * labelRadius;
           const y = height / 2 + Math.sin(angle) * labelRadius;
+          
+          // Draw vessel icon above the text if loaded
+          if (vesselIconLoaded && vesselIcon) {
+            const iconSize = isMobile ? 20 : 30; // Icon size in pixels
+            const iconY = y - fontSize - 25; // Position above text
+            ctx.drawImage(
+              vesselIcon,
+              x - iconSize / 2, // Center horizontally
+              iconY - iconSize / 2, // Center vertically
+              iconSize,
+              iconSize
+            );
+          }
           
           // Draw size label with white background
           drawTextWithBackground(size, x, y, fontSize);
@@ -417,7 +453,7 @@
         });
         break;
         
-      case 3: // Sanction body labels - circular layout, centered in groups
+      case 3: // Sanction body labels - vertical columns like step 0
         // Calculate counts for each sanctioning body
         const sanctionCounts = {};
         SANCTIONING_BODIES.forEach(body => {
@@ -425,10 +461,43 @@
         });
         
         SANCTIONING_BODIES.forEach((body, i) => {
-          const angle = (i / SANCTIONING_BODIES.length) * Math.PI * 2 - Math.PI / 2; // Start from top
-          const labelRadius = Math.min(width, height) * 0.18; // Match dot positioning radius
-          const x = width / 2 + Math.cos(angle) * labelRadius;
-          const y = height / 2 + Math.sin(angle) * labelRadius;
+          const spacing = width / (SANCTIONING_BODIES.length + 1.5);
+          let x = spacing * (i + 1);
+          
+          // Adjust positions based on index - different for mobile vs desktop
+          if (isMobile) {
+            // Mobile adjustments
+            if (i === 0) {
+              // U.S. - move to the right
+              x -= 10;
+            } else if (i === 1) {
+              // U.K. - move to the left
+              x += 20;
+            } else if (i === 2) {
+              // EU - move to the left
+              x += 35;
+            } else if (i === 3) {
+              // Other - keep as is
+              x += 30;
+            }
+          } else {
+            // Desktop adjustments (keep existing)
+            if (i === 0) {
+              // U.S. - move to the left
+              x -= 20;
+            } else if (i === 1) {
+              // U.K. - move slightly to the right
+              x += 35;
+            } else if (i === 2) {
+              // EU - move more to the right
+              x += 50;
+            } else if (i === 3) {
+              // Other - move slightly to the right
+              x += 25;
+            }
+          }
+          
+          const y = height / 2; // Middle of the group
           
           // Draw body name with white background
           drawTextWithBackground(body, x, y, fontSize);
@@ -465,29 +534,35 @@
           ctx.fillText(yearLabel, x, y);
         }
 
-// Add annotation for 2025 (desktop only)
-if (!isMobile) {
-  const vessels2025Count = dots.filter(d => d.latestSanctionYear === 2025).length;
-  const year2025Progress = (2025 - startYear) / 6;
-  const x2025 = width * xMargin + (width * xRange * year2025Progress);
+        // Add annotation for 2025 (desktop only)
+        if (!isMobile) {
+          const vessels2025Count = dots.filter(d => d.latestSanctionYear === 2025).length;
+          const year2025Progress = (2025 - startYear) / 6;
+          const x2025 = width * xMargin + (width * xRange * year2025Progress);
 
-  // Annotation text at top
-  const annotationY = 80;
-  ctx.font = '13px Retina, sans-serif';
-  ctx.fillStyle = '#333';
-  ctx.textAlign = 'center';
-  const annotationText = `${vessels2025Count} vessels`;
-  ctx.fillText(annotationText, width * 3 / 4, annotationY);
-}
+          // Annotation text at top
+          const annotationY = 92;
+          ctx.font = '13px Retina, sans-serif';
+          ctx.fillStyle = '#333';
+          ctx.textAlign = 'center';
+          const annotationText = `${vessels2025Count} vessels`;
+          ctx.fillText(annotationText, width * 3.15 / 4, annotationY);
+        }
 
-        // Draw line from annotation to 2025 bubbles
-        // ctx.strokeStyle = '#666';
-        // ctx.lineWidth = 1;
-        // ctx.beginPath();
-        // ctx.moveTo(x2025, annotationY + 10);
-        // ctx.lineTo(x2025, annotationY + 30);
-        // ctx.stroke();
-        // ctx.setLineDash([]); 
+        // Add annotation for Russia invasion in 2022 (desktop only)
+        if (!isMobile) {
+          const year2022Progress = (2022 - startYear) / 6;
+          const x2022 = width * xMargin + (width * xRange * year2022Progress);
+          
+          // Annotation text
+          const invasionAnnotationY = 145;
+          ctx.font = '13px Retina, sans-serif';
+          ctx.fillStyle = '#333';
+          ctx.textAlign = 'center';
+          ctx.fillText('Russian invasion begins', x2022, invasionAnnotationY);
+          
+        
+        }
         
         // Reset font for next render
         ctx.font = `${fontSize}px Retina, sans-serif`;
@@ -506,7 +581,7 @@ if (!isMobile) {
       ctx.fillStyle = '#666';
       
       // Legend title
-      ctx.fillText('Number of sanctions', legendX, legendY);
+      ctx.fillText('Number of sanctions per vessel', legendX, legendY);
       
       // Draw sample bubbles horizontally
       const sampleCounts = [1, 3, 5, 9];
@@ -548,6 +623,7 @@ if (!isMobile) {
   onMount(() => {
     console.log('App mounted');
     mounted = true;
+    loadVesselIcon(); // Load the vessel icon
     setupCanvas();
     initializeDots();
     updateSimulation(0);
