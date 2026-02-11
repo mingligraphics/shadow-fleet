@@ -85,7 +85,7 @@
     const uniqueSizes = [...new Set(data.map(d => d.size_category))].filter(s => s);
     
     // Order sizes from smallest to biggest (clockwise arrangement), Other always last
-    const sizeOrderSmallToBig = ['Handysize/Handymax', 'Aframax', 'Suezmax', 'VLCC/ULCC'];
+    const sizeOrderSmallToBig = ['Handysize/Handymax', 'Aframax', 'Suezmax', 'VLCC/ULCC*'];
     SIZE_GROUPS = sizeOrderSmallToBig.filter(size => uniqueSizes.includes(size));
     
     // Add any sizes not in the predefined order (except Other)
@@ -131,7 +131,7 @@
     
     // Map sizes to Ginger colors (bigger = darker)
     const sizeToGinger = {
-      'VLCC/ULCC': '#883800',        // Biggest - darkest
+      'VLCC/ULCC*': '#883800',        // Biggest - darkest
       'Suezmax': '#b25200',
       'Aframax': '#dc6c00',
       'Handysize/Handymax': '#e8ac76',
@@ -374,8 +374,10 @@
           const spacing = width / (FLAGS.length + 1.5);
           let x = spacing * (i + 1);
           
-          // Adjust positions: first four move left, last one moves right
-          if (i < 4) {
+          if (i == 0) {
+            x -= 35;
+          }// Adjust positions: first four move left, last one moves right
+          else if (i < 4) {
             x -= 20; // Move first four labels to the left
           } else if (i === FLAGS.length - 1) {
             x += 20; // Move last label to the right
@@ -420,7 +422,7 @@
           'Handysize/Handymax': 'Carrying capacity: less than 400,000 barrels',
           'Aframax': '750,000',
           'Suezmax': 'one million',
-          'VLCC/ULCC': 'two to four million'
+          'VLCC/ULCC*': 'two to four million'
         };
         
         SIZE_GROUPS.forEach((size, i) => {

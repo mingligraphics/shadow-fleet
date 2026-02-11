@@ -3,21 +3,21 @@
     import Scrolly from "../helpers/Scrolly.svelte";
   
     $: steps = [
-    `As of January 21st, there were 1,308 tankers sanctioned by different authorities. 
-    Merchant vessels must officially register a flag state under whose laws they agree to operate. 
-    Shadow fleet tankers frequently adopt flags of convenience due to insurance requirements or safety standards. 
-    Many also reflag to Russia seeking protection against U.S. interception and drone attacks.`,
-    `Shadow fleet vessels’ advanced age and poor repair make them vulnerable to mechanical failures and catastrophic leaks. 
-    Shadow fleet ships’ lack of insurance means that, should a spill occur, Western states could be forced to pay for the cleanup out of their own budgets, 
-    creating a fiscal crisis.<br>The mean age of shadow fleet ships in our dataset was 19.0 years old, much higher than the average of 12.4 years for ships outside the shadow fleet.`,
-    `Voyage distance determines which size tanker would be more economical to use. 
-    On long voyages, a tanker spends a greater portion of total voyage time at sea as opposed to loading or unloading in port, 
-    so larger tankers that can carry more cargo would be more economical. Since shorter voyages entail a greater portion of total voyage time in port, 
-    smaller vessels that can load and unload more quickly are often more economical.`,
-    `Following the Russian invasion of Ukraine in February 2022, the United States, United Kingdom, European Union, and their allies levied a barrage of sanctions on the Russian Federation. 
-    Russia’s energy industry has been the main target of these sanctions, and for good reason. Exports of fossil fuels, particularly crude oil, drive Russia’s economy.`,
-    `Between January and December 2025, vessel sanctions increased 77% year-over-year—over 700 first-time designations in twelve months. Despite designating hundreds of shadow fleet tankers, 
-    the fleet didn't shrink—it adapted. They modified behaviour, employing increasingly sophisticated deceptive practices to continue operations.`
+    `As of February 10, there were more than 1,300 tankers sanctioned by different authorities. 
+    International maritime law requires every ship to be registered with a specific country—a flag state—granting it nationality. 
+    Many tankers used “flags of convenience”.`,
+    `Shadow fleet vessels are typically old, which means they are vulnerable to mechanical failures and leaks. 
+    This is made worse by the fact that many lack proper insurance coverage. Should a spill or incident occur, 
+    no insurance money will be available to cover the cost of a cleanup or rescue. <br><br>The mean age of the shadow fleet ship was 19.0 years old, 
+    much higher than the average of 12.4 years for ships outside the shadow fleet, according to Brookings Institution.`,
+    `The distance of voyages determines the size of the tanker. On long voyages, such as from Venezuela to China, larger tankers that can carry more cargo would be more economical. 
+    On the other hand, smaller vessels can load and unload more quickly, making them better fits for shorter voyages such as from Russia’s port of Vladivostok to India through the strait of Malacca.
+    <br><br><span style="color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 17px; margin-top:6px;">*Very Large Crude Carrier or Ultra Large Crude Carrier</span>`,
+    `Following the Russian invasion of Ukraine in February 2022, the U.S., U.K., European Union, and their allies have levied sanctions on thousands of entities tied to shadow-fleet tankers. 
+    The joint efforts are aimed at crippling Russia’s oil and gas exports, which has been Moscow’s most important economic engine.  
+    <br><br><span style="color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 17px; margin-top:6px;">Note: Only sanctions by major authorities shown</span>`,
+    `In 2025, more than 700 first-time designations were added, representing a 77% surge from 2024, according to Kpler. 
+    However, these sanctions have so far done little to stop the flow of sanctioned crude from Russia, Iran and Venezuela, and Western militaries have done little, until recently, to physically stop the ships.`
   ];
   
   </script>
