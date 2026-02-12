@@ -13,8 +13,7 @@
   let simulation;
   let animationFrame;
   let mounted = false;
-  let vesselIcon;
-  let vesselIconLoaded = false;
+  let vesselIcons = {};
   
   // Define vessel properties - will be populated from JSON
   let FLAGS = [];
@@ -25,17 +24,17 @@
   // Color palettes from WSJ style guide
   const PEACOCK_COLORS = ['#e3f0f6', '#c3e3ed', '#88c9d7', '#00b3c9', '#0091a2', '#006f7a'];
   const GINGER_COLORS = ['#f7deca', '#f2c7a1', '#e8ac76', '#dc6c00', '#b25200', '#883800'];
-  const TIMELINE_COLORS = ['#f7deca', '#f2c7a1', '#e8ac76', '#dc6c00', '#b25200', '#883800', '#883800']; // 2020-2026: lightest to darkest ginger
+  const TIMELINE_COLORS = ['#f7deca', '#f2c7a1', '#e8ac76', '#dc6c00', '#b25200', '#883800', '#883800'];
   
   // Color palettes
   let FLAG_COLORS = {};
   let SIZE_COLORS = {};
-  const AGE_COLORS = ['#88c9d7', '#00b3c9', '#0091a2', '#727272']; // 0-10 lightest, 21-30 darkest peacock, 31+ gray
+  const AGE_COLORS = ['#88c9d7', '#00b3c9', '#0091a2', '#727272'];
   const SANCTION_COLORS = {
     'U.S.': '#88C9D7',
-    'EU': '#dc6c00',    // Ginger
-    'U.K.': '#e8ac76',    // Lighter ginger
-    'Other': '#727272'  // Gray
+    'EU': '#dc6c00',
+    'U.K.': '#e8ac76',
+    'Other': '#727272'
   };
   
   // Helper function to get age group index
@@ -52,53 +51,89 @@
     ctx.textAlign = textAlign;
     ctx.textBaseline = 'middle';
     
-    // Draw white outline/stroke around text
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.lineWidth = 4; // Thickness of the white outline
+    ctx.lineWidth = 4;
     ctx.strokeText(text, x, y);
     
-    // Draw the actual text on top
     ctx.fillStyle = '#333';
     ctx.fillText(text, x, y);
   }
   
-  // Load vessel icon
-  function loadVesselIcon() {
-    vesselIcon = new Image();
-    vesselIcon.crossOrigin = 'anonymous';
-    vesselIcon.onload = () => {
-      vesselIconLoaded = true;
-      console.log('Vessel icon loaded successfully');
+  // Remove near-white background from an image and return an offscreen canvas
+  function removeBackground(img, tolerance = 30) {
+    const offscreen = document.createElement('canvas');
+    offscreen.width  = img.naturalWidth  || img.width;
+    offscreen.height = img.naturalHeight || img.height;
+    const offCtx = offscreen.getContext('2d');
+    offCtx.drawImage(img, 0, 0);
+
+    const imageData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
+    const d = imageData.data;
+
+    // Sample the top-left corner pixel as the background color
+    const bgR = d[0], bgG = d[1], bgB = d[2];
+
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i], g = d[i + 1], b = d[i + 2];
+      const diff = Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB);
+      if (diff < tolerance * 3) {
+        // Fade out pixels close to the background color
+        const alpha = Math.min(255, (diff / (tolerance * 3)) * 255 * 4);
+        d[i + 3] = Math.round(alpha);
+      }
+    }
+
+    offCtx.putImageData(imageData, 0, 0);
+    return offscreen;
+  }
+
+  // Load vessel icons — one per size category
+  function loadVesselIcons() {
+    const iconSources = {
+      'Handysize/Handymax': 'https://images.wsj.net/im-33825725',
+      'Aframax':            'https://images.wsj.net/im-88588684',
+      'Suezmax':            'https://images.wsj.net/im-10617898',
+      'VLCC/ULCC*':         'https://images.wsj.net/im-13758880'
     };
-    vesselIcon.onerror = () => {
-      console.error('Failed to load vessel icon');
-      vesselIconLoaded = false;
-    };
-    vesselIcon.src = 'https://images.wsj.net/im-14204877';
+
+    Object.entries(iconSources).forEach(([size, src]) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload  = () => {
+        try {
+          vesselIcons[size] = removeBackground(img);
+          console.log(`Vessel icon processed for ${size}`);
+        } catch (e) {
+          console.warn(`Could not remove background for ${size}, using raw image:`, e);
+          vesselIcons[size] = img;
+        }
+      };
+      img.onerror = () => {
+        console.error(`Failed to load vessel icon for ${size}`);
+      };
+      img.src = src;
+    });
   }
   
   // Initialize dots from JSON data
   function initializeDots() {
     console.log(`Loading ${data.length} vessels from JSON`);
     
-    // Extract unique flags and sizes from data
     const uniqueSizes = [...new Set(data.map(d => d.size_category))].filter(s => s);
     
-    // Order sizes from smallest to biggest (clockwise arrangement), Other always last
     const sizeOrderSmallToBig = ['Handysize/Handymax', 'Aframax', 'Suezmax', 'VLCC/ULCC*'];
     SIZE_GROUPS = sizeOrderSmallToBig.filter(size => uniqueSizes.includes(size));
     
-    // Add any sizes not in the predefined order (except Other)
     uniqueSizes.forEach(size => {
       if (!SIZE_GROUPS.includes(size) && size !== 'Other') {
         SIZE_GROUPS.push(size);
       }
     });
     
-    // Add Other at the end if it exists
     if (uniqueSizes.includes('Other')) {
       SIZE_GROUPS.push('Other');
     }
+
     const flagCounts = {};
     data.forEach(d => {
       flagCounts[d.flag_country] = (flagCounts[d.flag_country] || 0) + 1;
@@ -109,7 +144,6 @@
       .sort((a, b) => b[1] - a[1])
       .map(([flag]) => flag);
     
-    // Add "Other" at the end if it exists
     if (flagCounts['Other']) {
       sortedFlags.push('Other');
     }
@@ -119,8 +153,6 @@
     console.log('Flags ordered by size (Other last):', FLAGS, flagCounts);
     console.log('Unique sizes:', SIZE_GROUPS);
     
-    // Create color mappings
-    // Map specific flags to specific colors
     const flagSpecificColors = {
       'Russia': '#F48474',
       'Cameroon': '#DC7300',
@@ -129,9 +161,8 @@
       'Other': '#bfbfbf'
     };
     
-    // Map sizes to Ginger colors (bigger = darker)
     const sizeToGinger = {
-      'VLCC/ULCC*': '#883800',        // Biggest - darkest
+      'VLCC/ULCC*': '#883800',
       'Suezmax': '#b25200',
       'Aframax': '#dc6c00',
       'Handysize/Handymax': '#e8ac76',
@@ -142,7 +173,6 @@
       if (flagSpecificColors[flag]) {
         FLAG_COLORS[flag] = flagSpecificColors[flag];
       } else {
-        // Fallback for any other flags
         FLAG_COLORS[flag] = '#00b3c9';
       }
     });
@@ -153,7 +183,6 @@
       } else if (size === 'Other') {
         SIZE_COLORS[size] = '#727272';
       } else {
-        // Fallback
         SIZE_COLORS[size] = '#dc6c00';
       }
     });
@@ -184,7 +213,8 @@
         sanctionIndex: sanctionIndex >= 0 ? sanctionIndex : 0,
         sanctionYear: vessel.sanction_year,
         latestSanctionYear: vessel.latest_sanction_year,
-        sanctionCount: vessel.sanction_count
+        sanctionCount: vessel.sanction_count,
+        UANIOnly: vessel.uani_only
       };
     });
     
@@ -199,7 +229,6 @@
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
     
-    // Force square canvas - use the smaller dimension
     const size = Math.min(rect.width, rect.height);
     width = size;
     height = size;
@@ -228,7 +257,6 @@
       case 3:
         return SANCTION_COLORS[dot.sanctionedBy] || '#727272';
       case 4:
-        // Timeline colors: all ginger shades, 2020 lightest to 2026 darkest
         const yearsSince2020 = Math.max(0, Math.min(dot.latestSanctionYear - 2020, 6));
         return TIMELINE_COLORS[yearsSince2020];
       default:
@@ -242,7 +270,6 @@
     const mobileScale = isMobile ? 0.6 : 1;
     
     if (step === 3 || step === 4) {
-      // Scale radius based on sanction count (1-9)
       return (1.5 + (dot.sanctionCount - 1) * 0.5) * mobileScale;
     }
     return 2.5 * mobileScale;
@@ -268,9 +295,8 @@
       case 0:
         simulation
           .force('x', forceX(d => {
-            const spacing = width / (FLAGS.length + 1.5); // More spacing
+            const spacing = width / (FLAGS.length + 1.5);
             const baseX = spacing * (d.flagIndex + 1);
-            // Keep dots within bounds with more padding
             return Math.max(60, Math.min(width - 60, baseX));
           }).strength(0.1))
           .force('y', forceY(height / 2).strength(0.1))
@@ -292,11 +318,11 @@
       case 2:
         simulation
           .force('x', forceX(d => {
-            const angle = (d.sizeIndex / SIZE_GROUPS.length) * Math.PI * 2 - Math.PI / 2; // Start from top
+            const angle = (d.sizeIndex / SIZE_GROUPS.length) * Math.PI * 2 - Math.PI / 2;
             return width / 2 + Math.cos(angle) * (Math.min(width, height) * 0.25);
           }).strength(0.1))
           .force('y', forceY(d => {
-            const angle = (d.sizeIndex / SIZE_GROUPS.length) * Math.PI * 2 - Math.PI / 2; // Start from top
+            const angle = (d.sizeIndex / SIZE_GROUPS.length) * Math.PI * 2 - Math.PI / 2;
             return height / 2 + Math.sin(angle) * (Math.min(width, height) * 0.25);
           }).strength(0.1))
           .force('collide', forceCollide(3 * collisionScale))
@@ -306,12 +332,16 @@
       case 3:
         simulation
           .force('x', forceX(d => {
+            if (d.UANIOnly !== 'N') return width / 2;
             const spacing = width / (SANCTIONING_BODIES.length + 1.5);
             const baseX = spacing * (d.sanctionIndex + 1);
             return Math.max(60, Math.min(width - 60, baseX));
-          }).strength(0.1))
-          .force('y', forceY(height / 2).strength(0.1))
-          .force('collide', forceCollide(d => getDotRadius(d, 3) + 1))
+          }).strength(d => d.UANIOnly === 'N' ? 0.1 : 0))
+          .force('y', forceY(d => {
+            if (d.UANIOnly !== 'N') return height / 2;
+            return height / 2;
+          }).strength(d => d.UANIOnly === 'N' ? 0.1 : 0))
+          .force('collide', forceCollide(d => d.UANIOnly === 'N' ? getDotRadius(d, 3) + 1 : 0))
           .force('charge', forceManyBody().strength(chargeStrength));
         break;
         
@@ -348,6 +378,7 @@
     
     // Draw dots
     dots.forEach(dot => {
+      if (currentStep === 3 && dot.UANIOnly !== 'N') return;
       const radius = getDotRadius(dot, currentStep);
       ctx.beginPath();
       ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
@@ -363,32 +394,31 @@
     ctx.fillStyle = '#333';
     
     switch(currentStep) {
-      case 0: // Flag labels - in the middle of groups with white background and counts
-        // Calculate counts for each flag
+      case 0:
         const flagCounts = {};
         FLAGS.forEach(flag => {
           flagCounts[flag] = dots.filter(d => d.flag === flag).length;
         });
-        
+
+        // Per-flag label offsets — tweak dx/dy independently for mobile and desktop
+        const flagLabelOffsets = {
+          'Russia':   { dx: isMobile ? -25 : -45, dy: isMobile ? 0 : 0 },
+          'Cameroon': { dx: isMobile ? -20 : -30, dy: isMobile ? 0 : 0 },
+          'Panama':   { dx: isMobile ? -20 : -30, dy: isMobile ? 0 : 0 },
+          'Iran':     { dx: isMobile ? -20 : -30, dy: isMobile ? 0 : 0 },
+          'Other':    { dx: isMobile ?  15 :  20, dy: isMobile ? 0 : 0 },
+        };
+
         FLAGS.forEach((flag, i) => {
           const spacing = width / (FLAGS.length + 1.5);
-          let x = spacing * (i + 1);
-          
-          if (i == 0) {
-            x -= 35;
-          }// Adjust positions: first four move left, last one moves right
-          else if (i < 4) {
-            x -= 20; // Move first four labels to the left
-          } else if (i === FLAGS.length - 1) {
-            x += 20; // Move last label to the right
-          }
-          
-          const y = height / 2; // Middle of the group
-          
-          // Draw flag name with white background
+          const baseX = spacing * (i + 1);
+          const offsets = flagLabelOffsets[flag] || { dx: 0, dy: 0 };
+
+          const x = baseX + offsets.dx;
+          const y = height / 2 + offsets.dy;
+
           drawTextWithBackground(flag, x, y, fontSize);
-          
-          // Draw count below (except for Other)
+
           if (flag !== 'Other') {
             const count = flagCounts[flag];
             drawTextWithBackground(count.toString(), x, y + fontSize + 8, fontSize);
@@ -396,13 +426,12 @@
         });
         break;
         
-      case 1: // Age labels - left edge, spaced out more
+      case 1:
         AGE_GROUPS.forEach((ageGroup, i) => {
-          const spacing = height / 4.5; // More spacing between groups
-          const x = 15; // Left edge
+          const spacing = height / 4.5;
+          const x = 15;
           let y = spacing * (i + 1);
           
-          // Move first three groups up
           if (i < 2) {
             y -= 65;
           }
@@ -413,104 +442,145 @@
           ctx.textAlign = 'left';
           ctx.fillText(ageGroup, x, y);
         });
-        ctx.textAlign = 'center'; // Reset
+        ctx.textAlign = 'center';
         break;
         
-      case 2: // Size labels (circular) - centered in groups with white background and vessel icons
-        // Map size categories to tonnage ranges
+      case 2:
         const tonnageInfo = {
           'Handysize/Handymax': 'Carrying capacity: less than 400,000 barrels',
           'Aframax': '750,000',
           'Suezmax': 'one million',
           'VLCC/ULCC*': 'two to four million'
         };
+
+        // Footage labels drawn above each icon
+        const footageInfo = {
+          'Handysize/Handymax': 'Length: less than 625 ft',
+          'Aframax': '800 ft',
+          'Suezmax': '935 ft',
+          'VLCC/ULCC*': '1,080–1,360 ft'
+        };
+
+        // Per-group footage label offsets — tweak dx/dy independently for mobile and desktop
+        const footageOffsets = {
+          'Handysize/Handymax': { dx: isMobile ?  0 :  -8, dy: isMobile ? 0 : 16 },
+          'Aframax':            { dx: isMobile ?  0 :  -10, dy: isMobile ? 0 : 15 },
+          'Suezmax':            { dx: isMobile ?  0 :  -10, dy: isMobile ? 0 : 15 },
+          'VLCC/ULCC*':         { dx: isMobile ?  0 :  0, dy: isMobile ? 0 : 15 },
+        };
+
+        // Per-group icon offsets — tweak dx/dy to reposition each icon independently
+        const iconOffsets = {
+          'Handysize/Handymax': { dx: isMobile ?   0 :   0, dy: isMobile ? -80 : -140 },
+          'Aframax':            { dx: isMobile ?  36 :  60, dy: isMobile ? -55 : -95 },
+          'Suezmax':            { dx: isMobile ?  12 :  25, dy: isMobile ?  -5 :  -20 },
+          'VLCC/ULCC*':         { dx: isMobile ? -15 : -25, dy: isMobile ?  -20 :  -35 },
+        };
+
+        // Per-group label offsets — tweak dx/dy to reposition each label independently
+        const labelOffsets = {
+          'Handysize/Handymax': { dx: isMobile ?   0 : -10, dy: isMobile ? -30 : -40 },
+          'Aframax':            { dx: isMobile ?  25 :  40, dy: isMobile ?   0 :   0 },
+          'Suezmax':            { dx: isMobile ?  10 :  15, dy: isMobile ?  25 :  35 },
+          'VLCC/ULCC*':         { dx: isMobile ? -12 : -23, dy: isMobile ?  20 :  25 },
+        };
         
         SIZE_GROUPS.forEach((size, i) => {
-          const angle = (i / SIZE_GROUPS.length) * Math.PI * 2 - Math.PI / 2; // Start from top
-          const labelRadius = Math.min(width, height) * 0.25; // Match dot positioning radius
-          const x = width / 2 + Math.cos(angle) * labelRadius;
-          const y = height / 2 + Math.sin(angle) * labelRadius;
-          
-          // Draw vessel icon above the text if loaded
-          if (vesselIconLoaded && vesselIcon) {
-            const iconSize = isMobile ? 20 : 30; // Icon size in pixels
-            const iconY = y - fontSize - 25; // Position above text
+          const angle = (i / SIZE_GROUPS.length) * Math.PI * 2 - Math.PI / 2;
+          const labelRadius = Math.min(width, height) * 0.25;
+          const cx = width / 2 + Math.cos(angle) * labelRadius;
+          const cy = height / 2 + Math.sin(angle) * labelRadius;
+
+          const iconOffset = iconOffsets[size] || { dx: 0, dy: -(isMobile ? 14 : 28) };
+          const labelOffset = labelOffsets[size] || { dx: 0, dy: 0 };
+          const iconSize = isMobile ? 20 : 50;
+          const smallerFontSize = isMobile ? 9 : 11;
+
+          // Compute icon center position
+          const iconCx = cx + iconOffset.dx;
+          const iconCy = cy + iconOffset.dy;
+
+          // Draw footage label above the icon
+          if (footageInfo[size]) {
+            const footageOffset = footageOffsets[size] || { dx: 0, dy: 0 };
+            drawTextWithBackground(
+              footageInfo[size],
+              iconCx + footageOffset.dx,
+              iconCy - iconSize / 2 - (isMobile ? 8 : 12) + footageOffset.dy,
+              smallerFontSize
+            );
+          }
+
+          // Draw icon
+          const icon = vesselIcons[size];
+          if (icon) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'multiply';
             ctx.drawImage(
-              vesselIcon,
-              x - iconSize / 2, // Center horizontally
-              iconY - iconSize / 2, // Center vertically
+              icon,
+              iconCx - iconSize / 2,
+              iconCy - iconSize / 2,
               iconSize,
               iconSize
             );
+            ctx.restore();
           }
+
+          // Draw size name label using per-group offset
+          const lx = cx + labelOffset.dx;
+          const ly = cy + labelOffset.dy;
+
+          drawTextWithBackground(size, lx, ly, fontSize);
           
-          // Draw size label with white background
-          drawTextWithBackground(size, x, y, fontSize);
-          
-          // Draw tonnage info below if available
+          // Draw tonnage info below the size name label
           if (tonnageInfo[size]) {
-            const smallerFontSize = isMobile ? 9 : 11;
-            drawTextWithBackground(tonnageInfo[size], x, y + fontSize + 6, smallerFontSize);
+            drawTextWithBackground(tonnageInfo[size], lx, ly + fontSize + 6, smallerFontSize);
           }
         });
         break;
         
-      case 3: // Sanction body labels - vertical columns like step 0
-        // Calculate counts for each sanctioning body
+      case 3:
         const sanctionCounts = {};
         SANCTIONING_BODIES.forEach(body => {
-          sanctionCounts[body] = dots.filter(d => d.sanctionedBy === body).length;
+          sanctionCounts[body] = dots.filter(d => d.UANIOnly === 'N' && d.sanctionedBy === body).length;
         });
         
         SANCTIONING_BODIES.forEach((body, i) => {
           const spacing = width / (SANCTIONING_BODIES.length + 1.5);
           let x = spacing * (i + 1);
           
-          // Adjust positions based on index - different for mobile vs desktop
           if (isMobile) {
-            // Mobile adjustments
             if (i === 0) {
-              // U.S. - move to the right
               x -= 10;
             } else if (i === 1) {
-              // U.K. - move to the left
               x += 20;
             } else if (i === 2) {
-              // EU - move to the left
               x += 35;
             } else if (i === 3) {
-              // Other - keep as is
               x += 30;
             }
           } else {
-            // Desktop adjustments (keep existing)
             if (i === 0) {
-              // U.S. - move to the left
               x -= 20;
             } else if (i === 1) {
-              // U.K. - move slightly to the right
               x += 35;
             } else if (i === 2) {
-              // EU - move more to the right
               x += 50;
             } else if (i === 3) {
-              // Other - move slightly to the right
               x += 25;
             }
           }
           
-          const y = height / 2; // Middle of the group
+          const y = height / 2;
           
-          // Draw body name with white background
           drawTextWithBackground(body, x, y, fontSize);
           
-          // Draw count below with white background
           const count = sanctionCounts[body];
           drawTextWithBackground(count.toString(), x, y + fontSize + 8, fontSize);
         });
         break;
         
-      case 4: // Timeline labels with Retina Narrow font
+      case 4:
         const startYear = 2020;
         const endYear = 2026;
         const xMargin = isMobile ? 0.15 : 0.05;
@@ -519,13 +589,11 @@
         ctx.font = '13px "Retina Narrow", sans-serif';
         ctx.fillStyle = '#222222';
         
-        // Draw year labels
         for (let year = startYear; year <= endYear; year++) {
           const yearProgress = (year - startYear) / 6;
           const x = width * xMargin + (width * xRange * yearProgress);
           const y = height - 20;
           
-          // Format year label
           let yearLabel;
           if (year === 2020) {
             yearLabel = "2016-'20";
@@ -536,13 +604,11 @@
           ctx.fillText(yearLabel, x, y);
         }
 
-        // Add annotation for 2025 (desktop only)
         if (!isMobile) {
           const vessels2025Count = dots.filter(d => d.latestSanctionYear === 2025).length;
           const year2025Progress = (2025 - startYear) / 6;
           const x2025 = width * xMargin + (width * xRange * year2025Progress);
 
-          // Annotation text at top
           const annotationY = 92;
           ctx.font = '13px Retina, sans-serif';
           ctx.fillStyle = '#333';
@@ -551,28 +617,23 @@
           ctx.fillText(annotationText, width * 3.15 / 4, annotationY);
         }
 
-        // Add annotation for Russia invasion in 2022 (desktop only)
         if (!isMobile) {
           const year2022Progress = (2022 - startYear) / 6;
           const x2022 = width * xMargin + (width * xRange * year2022Progress);
           
-          // Annotation text
           const invasionAnnotationY = 145;
           ctx.font = '13px Retina, sans-serif';
           ctx.fillStyle = '#333';
           ctx.textAlign = 'center';
           ctx.fillText('Russian invasion begins', x2022, invasionAnnotationY);
-          
-        
         }
         
-        // Reset font for next render
         ctx.font = `${fontSize}px Retina, sans-serif`;
         ctx.fillStyle = '#333';
         break;
     }
     
-    // Draw legend for steps 3 and 4 (bubble size represents sanction count)
+    // Draw legend for steps 3 and 4
     if (currentStep === 3 || currentStep === 4) {
       const legendX = isMobile ? 15 : 20;
       const legendY = isMobile ? 30 : 90;
@@ -582,32 +643,27 @@
       ctx.textAlign = 'left';
       ctx.fillStyle = '#666';
       
-      // Legend title
       ctx.fillText('Number of sanctions per vessel', legendX, legendY);
       
-      // Draw sample bubbles horizontally
       const sampleCounts = [1, 3, 5, 9];
       const sampleLabels = ['1', '3', '5', '9'];
-      const maxRadius = (1.5 + (9 - 1) * 0.5) * (isMobile ? 0.6 : 1); // Largest bubble
+      const maxRadius = (1.5 + (9 - 1) * 0.5) * (isMobile ? 0.6 : 1);
       
       sampleCounts.forEach((count, i) => {
         const x = legendX + bubbleSpacing * i;
-        const y = legendY + 20; // Fixed vertical position for all bubbles
+        const y = legendY + 20;
         const radius = (1.5 + (count - 1) * 0.5) * (isMobile ? 0.6 : 1);
         
-        // Draw sample bubble
         ctx.beginPath();
         ctx.arc(x + 10, y, radius, 0, Math.PI * 2);
         ctx.fillStyle = '#bbb';
         ctx.fill();
         
-        // Draw label underneath - aligned to bottom
         ctx.textAlign = 'center';
         ctx.fillStyle = '#666';
         ctx.fillText(sampleLabels[i], x + 10, y + maxRadius + 12);
       });
       
-      // Reset text align
       ctx.textAlign = 'center';
     }
     
@@ -625,7 +681,7 @@
   onMount(() => {
     console.log('App mounted');
     mounted = true;
-    loadVesselIcon(); // Load the vessel icon
+    loadVesselIcons();
     setupCanvas();
     initializeDots();
     updateSimulation(0);
@@ -699,11 +755,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding-bottom: 40px; /* Add padding for year labels */
+    padding-bottom: 40px;
   }
   
   canvas {
-    width: 90vh; /* Match height */
+    width: 90vh;
     height: 90vh;
     max-width: 100%;
     max-height: 100%;
