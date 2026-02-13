@@ -9,25 +9,27 @@
   let width = 550;
   let height = 550;
   let currentStep = 0;
+  let displayStep = 0; // ← never goes undefined; freezes on last seen step
+
+  // Only update displayStep when currentStep is a real value
+  $: if (currentStep !== undefined) displayStep = currentStep;
+
   let dots = [];
   let simulation;
   let animationFrame;
   let mounted = false;
   let vesselIcons = {};
-  let flagIcons = {};            // ← new: loaded flag images (background-removed)
+  let flagIcons = {};
   
-  // Define vessel properties - will be populated from JSON
   let FLAGS = [];
   let SIZE_GROUPS = [];
   const SANCTIONING_BODIES = ['U.S.', 'U.K.', 'EU', 'Other'];
   const AGE_GROUPS = ['0-10 years', '11-20', '21-30', '31 and more'];
   
-  // Color palettes from WSJ style guide
   const PEACOCK_COLORS = ['#e3f0f6', '#c3e3ed', '#88c9d7', '#00b3c9', '#0091a2', '#006f7a'];
   const GINGER_COLORS = ['#f7deca', '#f2c7a1', '#e8ac76', '#dc6c00', '#b25200', '#883800'];
   const TIMELINE_COLORS = ['#c3e3ed', '#c3e3ed', '#88c9d7', '#00b3c9', '#0091a2', '#006f7a','#006f7a'];
   
-  // Color palettes
   let FLAG_COLORS = {};
   let SIZE_COLORS = {};
   const AGE_COLORS = ['#88c9d7', '#00b3c9', '#0091a2', '#727272'];
@@ -38,9 +40,6 @@
     'Other': '#bfbfbf'
   };
 
-  // ─────────────────────────────────────────────────────────────────
-  // FLAG ICON SOURCES
-  // ─────────────────────────────────────────────────────────────────
   const FLAG_ICON_SOURCES = {
     'Russia':   'https://images.wsj.net/im-59819117',
     'Cameroon': 'https://images.wsj.net/im-53935436',
@@ -48,10 +47,6 @@
     'Iran':     'https://images.wsj.net/im-78648596',
   };
 
-  // ─────────────────────────────────────────────────────────────────
-  // FLAG ICON POSITION OFFSETS  (relative to the cluster centre)
-  // Positive dx → right, positive dy → down
-  // ─────────────────────────────────────────────────────────────────
   const flagIconOffsets = {
     'Russia':   { desktop: { dx:  -22, dy: -120 }, mobile: { dx: -10, dy: -75 } },
     'Cameroon': { desktop: { dx:  -24, dy: -120 }, mobile: { dx: -12, dy: -75 } },
@@ -59,15 +54,11 @@
     'Iran':     { desktop: { dx:  -22, dy: -120 }, mobile: { dx: -12, dy: -75 } },
   };
 
-  // ─────────────────────────────────────────────────────────────────
-  // FLAG ICON RENDER SIZE (width × height in CSS pixels)
-  // ─────────────────────────────────────────────────────────────────
   const flagIconSize = {
     desktop: { w: 50, h: 50*2/3 },
     mobile:  { w: 24, h: 24*2/3 },
   };
   
-  // Helper function to get age group index
   function getAgeGroupIndex(age) {
     if (age <= 10) return 0;
     if (age <= 20) return 1;
@@ -75,7 +66,6 @@
     return 3;
   }
   
-  // Helper function to draw text with white outline/stroke
   function drawTextWithBackground(text, x, y, fontSize = 15, textAlign = 'center') {
     ctx.font = `${fontSize}px Retina, sans-serif`;
     ctx.textAlign = textAlign;
@@ -89,7 +79,6 @@
     ctx.fillText(text, x, y);
   }
   
-  // Remove near-white background from an image and return an offscreen canvas
   function removeBackground(img, tolerance = 30) {
     const offscreen = document.createElement('canvas');
     offscreen.width  = img.naturalWidth  || img.width;
@@ -115,7 +104,6 @@
     return offscreen;
   }
 
-  // Load vessel icons — one per size category
   function loadVesselIcons() {
     const iconSources = {
       'Handysize/Handymax': 'https://images.wsj.net/im-87719691',
@@ -139,15 +127,11 @@
     });
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // Load flag icons — one per country
-  // ─────────────────────────────────────────────────────────────────
   function loadFlagIcons() {
     Object.entries(FLAG_ICON_SOURCES).forEach(([country, src]) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
-        // Flags have real backgrounds so we skip removeBackground
         flagIcons[country] = img;
       };
       img.onerror = () => console.error(`Failed to load flag icon for ${country}`);
@@ -155,7 +139,6 @@
     });
   }
   
-  // Initialize dots from JSON data
   function initializeDots() {
     console.log(`Loading ${data.length} vessels from JSON`);
     
@@ -232,7 +215,6 @@
     });
   }
   
-  // Setup high-DPI canvas
   function setupCanvas() {
     if (!canvas) return;
     const dpr  = window.devicePixelRatio || 1;
@@ -248,7 +230,6 @@
     canvas.style.height = `${height}px`;
   }
   
-  // Get color for dot based on step
   function getDotColor(dot, step) {
     switch(step) {
       case 0: return FLAG_COLORS[dot.flag] || '#00b3c9';
@@ -262,7 +243,6 @@
     }
   }
   
-  // Get radius for dot based on step
   function getDotRadius(dot, step) {
     const isMobile = width < 450;
     const mobileScale = isMobile ? 0.6 : 1;
@@ -270,7 +250,6 @@
     return 2.5 * mobileScale;
   }
   
-  // Update simulation based on current step
   function updateSimulation(step) {
     if (!mounted || dots.length === 0) return;
     if (simulation) simulation.stop();
@@ -356,19 +335,18 @@
     simulation.alpha(1).restart();
   }
   
-  // Render loop with requestAnimationFrame
   function render() {
     if (!ctx || !mounted) return;
     
     ctx.clearRect(0, 0, width, height);
     
-    // Draw dots
+    // Use displayStep (never undefined) for all rendering
     dots.forEach(dot => {
-      if (currentStep === 3 && dot.UANIOnly !== 'N') return;
-      const radius = getDotRadius(dot, currentStep);
+      if (displayStep === 3 && dot.UANIOnly !== 'N') return;
+      const radius = getDotRadius(dot, displayStep);
       ctx.beginPath();
       ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = getDotColor(dot, currentStep);
+      ctx.fillStyle = getDotColor(dot, displayStep);
       ctx.fill();
     });
     
@@ -378,15 +356,13 @@
     ctx.textAlign   = 'center';
     ctx.fillStyle   = '#333';
     
-    switch(currentStep) {
-      // ───────────────────────────────────────────────────────────
+    switch(displayStep) {
       case 0: {
         const flagCounts = {};
         FLAGS.forEach(flag => {
           flagCounts[flag] = dots.filter(d => d.flag === flag).length;
         });
 
-        // Text-label offsets (same structure as before)
         const flagLabelOffsets = {
           'Russia':   { dx: isMobile ? -25 : -50, dy: 0 },
           'Cameroon': { dx: isMobile ? -20 : -30, dy: 0 },
@@ -399,13 +375,11 @@
           const spacing = width / (FLAGS.length + 1.5);
           const baseX   = spacing * (i + 1);
           const off     = flagLabelOffsets[flag] || { dx: 0, dy: 0 };
-          const cx      = baseX + off.dx;   // cluster centre x used for label + icon
+          const cx      = baseX + off.dx;
           const cy      = height / 2 + off.dy;
 
-          // ── Draw country-name label ──────────────────────────
           drawTextWithBackground(flag, cx, cy, fontSize);
 
-          // ── Draw vessel count below the label ────────────────
           if (flag !== 'Other') {
             drawTextWithBackground(
               flagCounts[flag].toString(),
@@ -415,22 +389,16 @@
             );
           }
 
-          // ── Draw flag icon above the cluster ─────────────────
           const icon = flagIcons[flag];
           if (icon) {
             const device   = isMobile ? 'mobile' : 'desktop';
             const iconOff  = (flagIconOffsets[flag] || {})[device] || { dx: 0, dy: -80 };
             const iconSize = flagIconSize[device];
-
-            const ix = cx + iconOff.dx;
-            const iy = cy + iconOff.dy;
-
-            ctx.drawImage(icon, ix, iy, iconSize.w, iconSize.h);
+            ctx.drawImage(icon, cx + iconOff.dx, cy + iconOff.dy, iconSize.w, iconSize.h);
           }
         });
         break;
       }
-      // ───────────────────────────────────────────────────────────
         
       case 1:
         AGE_GROUPS.forEach((ageGroup, i) => {
@@ -554,9 +522,6 @@
         const xMargin   = isMobile ? 0.15 : 0.05;
         const xRange    = isMobile ? 0.7  : 0.9;
 
-        // ── Year labels: moved up, closer to the bubble swarm ──
-        // Bubbles are centred around height/2; place labels ~60px below
-        // the bottom edge of the swarm area (height * 0.75 is a safe floor).
         const yearLabelY = isMobile ? height * 0.94 : height * 0.85;
 
         ctx.font      = '13px "Retina Narrow", sans-serif';
@@ -571,25 +536,22 @@
         }
 
         if (!isMobile) {
-          // ── "N vessels" annotation stays near the top ──
           const vessels2025Count = dots.filter(d => d.latestSanctionYear === 2025).length;
           ctx.font      = '13px Retina, sans-serif';
           ctx.fillStyle = '#333';
           ctx.textAlign = 'center';
           ctx.fillText(`${vessels2025Count} vessels`, width * 3.15 / 4, 92);
 
-          // ── Russia-Ukraine war annotation: placed below year labels ──
           const year2022Progress  = (2022 - startYear) / 6;
           const annotationX = width * xMargin + (width * xRange * year2022Progress) + 40;
-          const annotationY = yearLabelY + 28;   // one line below year labels
+          const annotationY = yearLabelY + 28;
 
           ctx.font      = '13px Retina, sans-serif';
           ctx.fillStyle = '#333';
           ctx.textAlign = 'center';
           ctx.fillText('Russia-Ukraine war', annotationX, annotationY);
 
-          // ── Arrow pointing right (toward 2026) ──
-          const arrowY      = annotationY ;
+          const arrowY      = annotationY;
           const arrowStartX = annotationX + 70;
           const arrowEndX   = annotationX + 100;
           const headSize    = 4;
@@ -597,7 +559,6 @@
           ctx.beginPath();
           ctx.moveTo(arrowStartX, arrowY);
           ctx.lineTo(arrowEndX, arrowY);
-          // arrowhead
           ctx.moveTo(arrowEndX - headSize, arrowY - headSize * 0.6);
           ctx.lineTo(arrowEndX, arrowY);
           ctx.lineTo(arrowEndX - headSize, arrowY + headSize * 0.6);
@@ -613,7 +574,7 @@
     }
     
     // Draw legend for steps 3 and 4
-    if (currentStep === 3 || currentStep === 4) {
+    if (displayStep === 3 || displayStep === 4) {
       const legendX       = isMobile ? 15 : 20;
       const legendY       = isMobile ? 30 : 90;
       const bubbleSpacing = isMobile ? 20 : 25;
@@ -646,15 +607,15 @@
     animationFrame = requestAnimationFrame(render);
   }
   
-  // Watch for step changes
-  $: {
-    if (mounted && dots.length > 0) updateSimulation(currentStep);
+  // Only trigger simulation when currentStep has a real value (not undefined)
+  $: if (mounted && dots.length > 0 && currentStep !== undefined) {
+    updateSimulation(currentStep);
   }
   
   onMount(() => {
     mounted = true;
     loadVesselIcons();
-    loadFlagIcons();          // ← load flag icons on mount
+    loadFlagIcons();
     setupCanvas();
     initializeDots();
     updateSimulation(0);
@@ -662,7 +623,7 @@
     
     const handleResize = () => {
       setupCanvas();
-      if (dots.length > 0) updateSimulation(currentStep);
+      if (dots.length > 0) updateSimulation(displayStep);
     };
     
     window.addEventListener('resize', handleResize);
@@ -684,6 +645,7 @@
       </div>
     </div>
     <Steps bind:currentStep />
+    <div class="after-steps"></div>
   </section>
 </main>
 
@@ -732,5 +694,10 @@
     max-height: 100%;
     aspect-ratio: 1 / 1;
     display: block;
+  }
+
+  /* Keeps the sticky canvas pinned while the last step scrolls away */
+  .after-steps {
+    height: 100vh;
   }
 </style>
