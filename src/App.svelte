@@ -24,17 +24,17 @@
   // Color palettes from WSJ style guide
   const PEACOCK_COLORS = ['#e3f0f6', '#c3e3ed', '#88c9d7', '#00b3c9', '#0091a2', '#006f7a'];
   const GINGER_COLORS = ['#f7deca', '#f2c7a1', '#e8ac76', '#dc6c00', '#b25200', '#883800'];
-  const TIMELINE_COLORS = ['#f7deca', '#f2c7a1', '#e8ac76', '#dc6c00', '#b25200', '#883800', '#883800'];
+  const TIMELINE_COLORS = ['#c3e3ed', '#c3e3ed', '#88c9d7', '#00b3c9', '#0091a2', '#006f7a','#006f7a'];
   
   // Color palettes
   let FLAG_COLORS = {};
   let SIZE_COLORS = {};
   const AGE_COLORS = ['#88c9d7', '#00b3c9', '#0091a2', '#727272'];
   const SANCTION_COLORS = {
-    'U.S.': '#88C9D7',
-    'EU': '#dc6c00',
-    'U.K.': '#e8ac76',
-    'Other': '#727272'
+    'U.S.': '#00b3c9',
+    'EU': '#c3e3ed',
+    'U.K.': '#88c9d7',
+    'Other': '#bfbfbf'
   };
   
   // Helper function to get age group index
@@ -154,18 +154,18 @@
     console.log('Unique sizes:', SIZE_GROUPS);
     
     const flagSpecificColors = {
-      'Russia': '#F48474',
-      'Cameroon': '#DC7300',
-      'Panama': '#00b3c9',
-      'Iran': '#76BCE8',
+      'Russia': '#0091a2',
+      'Cameroon':'#00b3c9',
+      'Panama': '#88c9d7',
+      'Iran': '#c3e3ed',
       'Other': '#bfbfbf'
     };
     
     const sizeToGinger = {
-      'VLCC/ULCC*': '#883800',
-      'Suezmax': '#b25200',
-      'Aframax': '#dc6c00',
-      'Handysize/Handymax': '#e8ac76',
+      'VLCC/ULCC*': '#0091a2',
+      'Suezmax': '#00b3c9',
+      'Aframax': '#88c9d7',
+      'Handysize/Handymax': '#c3e3ed',
       'Other': '#bfbfbf'
     };
     
@@ -724,7 +724,7 @@
   :global(body) {
     margin: 0;
     padding: 0;
-    background: #f8f9fa;
+    background: #FFFFFF;
     overflow-x: hidden;
   }
   

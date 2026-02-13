@@ -15,7 +15,7 @@
     <br><br><span style="color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 17px; margin-top:6px;">*Very Large Crude Carrier or Ultra Large Crude Carrier</span>`,
     `Following the Russian invasion of Ukraine in February 2022, the U.S., U.K., European Union, and their allies have levied sanctions on thousands of entities tied to shadow fleet tankers. 
     The joint efforts are aimed at crippling Russia’s oil and gas exports, which has been Moscow’s most important economic engine.
-    <br><br><span style="color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 17px; margin-top:6px;">Note: Only sanctions by major authorities shown</span>`,
+    <br><br><span style="color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 17px; margin-top:6px;">Note: Sanctions by major authorities shown</span>`,
     `In 2025, more than 700 first-time designations were added, representing a 77% surge from 2024, according to Kpler. However, 
     these sanctions have so far done little to stop the flow of sanctioned crude from Russia, Iran and Venezuela, and Western militaries have done little, 
     until recently, to physically stop the ships.<br><br><span style="color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 17px; margin-top:6px;">Note: Latest sanctions shown</span>`
