@@ -549,11 +549,11 @@
           ctx.font      = '13px Retina, sans-serif';
           ctx.fillStyle = '#333';
           ctx.textAlign = 'center';
-          ctx.fillText('Russia-Ukraine war', annotationX, annotationY);
+          ctx.fillText('Russia-Ukraine war', annotationX + 35, annotationY + 17);
 
           const arrowY      = annotationY;
-          const arrowStartX = annotationX + 70;
-          const arrowEndX   = annotationX + 100;
+          const arrowStartX = annotationX - 20;
+          const arrowEndX   = width * 0.95;
           const headSize    = 4;
 
           ctx.beginPath();

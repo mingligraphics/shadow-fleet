@@ -3,22 +3,16 @@
     import Scrolly from "../helpers/Scrolly.svelte";
   
     $: steps = [
-    `International maritime law requires every ship to be registered with a specific country—a flag state—granting it nationality. 
-    Many tankers use “flags of convenience” to evade regulation.`,
-    `Shadow fleet vessels are typically old, which means they are vulnerable to mechanical failures and leaks. 
-    This is made worse by the fact that many lack proper insurance coverage. Should a spill or incident occur, 
-    no insurance money will be available to cover the cost of a cleanup or rescue. 
-    <br><br>The mean age of the shadow fleet ship was 22 years old, according to WSJ analysis of the TankerTrackers data, much higher than the average of 12.4 years for ships outside the shadow fleet, based on data from the Brookings Institute.`,
-    `The distance of voyages determines the size of the tanker. On long voyages, such as from Venezuela to China, larger tankers that can carry more cargo would be more economical. 
-    On the other hand, smaller vessels can load and unload more quickly, making them better fits for shorter voyages such as from Russia’s eastern port of Vladivostok to India through the Singapore Strait. 
-    This route cuts down the travel time by 40% from the traditional routes from Russia’s west to India via the Suez Canal. 
+    `International maritime law requires every ship to be registered with a specific country—a flag
+     state—granting it nationality. Many tankers use so-called flags of convenience to evade regulation.`,
+    `Shadow-fleet vessels are typically old and lack proper insurance. The mean age of a shadow fleet ship
+     is almost double the average for other tankers, based on data from the Brookings Institute.`,
+    `Larger tankers generally undertake longer voyages so they can carry more cargo. Smaller vessels can load and unload more quickly, making them more efficient for shorter journeys.
     <br><br><span style="color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 17px; margin-top:6px;">*Very Large Crude Carrier or Ultra Large Crude Carrier</span>`,
-    `Following the Russian invasion of Ukraine in February 2022, the U.S., U.K., European Union, and their allies have levied sanctions on thousands of entities tied to shadow fleet tankers. 
-    The joint efforts are aimed at crippling Russia’s oil and gas exports, which has been Moscow’s most important economic engine.
-    <br><br><span style="color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 17px; margin-top:6px;">Note: Sanctions by major authorities shown</span>`,
-    `In 2025, more than 700 first-time designations were added, representing a 77% surge from 2024, according to Kpler. However, 
-    these sanctions have so far done little to stop the flow of sanctioned crude from Russia, Iran and Venezuela, and Western militaries have done little, 
-    until recently, to physically stop the ships.<br><br><span style="color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 17px; margin-top:6px;">Note: Latest sanctions shown</span>`
+    `The West has imposed sanctions on thousands of entities tied to shadow-fleet tankers to punish Russia for its invasion of Ukraine. The joint efforts are aimed at crippling Russia’s 
+    oil and gas exports, which have powered Moscow’s economic engine.
+    <br><br><span style="color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 13px; margin-top:2px;">Note: Sanctions to a tanker can be issued by several authorities. First sanction by major authority shown.</span>`,
+    `In the latest round of sanctions, nearly 900 vessels were designated last year, more than five times as many as the year before.<br><br><span style="color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 17px; margin-top:6px;">Note: Latest sanctions shown</span>`
   ];
   
   </script>
