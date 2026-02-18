@@ -50,10 +50,10 @@
   width: 100%;
   max-width: 500px; 
   margin: 0 auto;
-  font-family: RetinaLight, sans-serif;
-  font-size: 17px;
-  line-height: 27px;
+  font-family: Exchange, Georgia, serif;
+  font-size: 19px;
   font-weight: 400;
+  line-height: 27px;
   color: #333;
   padding: 20px 25px 20px;
   box-shadow: 0 0 1px 0 rgba(0, 0, 0, .4);
