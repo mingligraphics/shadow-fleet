@@ -44,14 +44,14 @@
     'Russia':   'https://images.wsj.net/im-59819117',
     'Cameroon': 'https://images.wsj.net/im-53935436',
     'Panama':   'https://images.wsj.net/im-70904983',
-    'Iran':     'https://images.wsj.net/im-78648596',
+    'Sierra Leone': 'https://images.wsj.net/im-16776081',
   };
 
   const flagIconOffsets = {
     'Russia':   { desktop: { dx:  -22, dy: -120 }, mobile: { dx: -10, dy: -75 } },
     'Cameroon': { desktop: { dx:  -24, dy: -120 }, mobile: { dx: -12, dy: -75 } },
     'Panama':   { desktop: { dx:  -22, dy: -120 }, mobile: { dx: -12, dy: -75 } },
-    'Iran':     { desktop: { dx:  -22, dy: -120 }, mobile: { dx: -12, dy: -75 } },
+    'Sierra Leone':     { desktop: { dx:  -22, dy: -120 }, mobile: { dx: -12, dy: -75 } },
   };
 
   const flagIconSize = {
@@ -167,7 +167,7 @@
       'Russia':   '#0091a2',
       'Cameroon': '#00b3c9',
       'Panama':   '#88c9d7',
-      'Iran':     '#c3e3ed',
+      'Sierra Leone':     '#c3e3ed',
       'Other':    '#bfbfbf'
     };
     
@@ -367,7 +367,7 @@
           'Russia':   { dx: isMobile ? -25 : -50, dy: 0 },
           'Cameroon': { dx: isMobile ? -20 : -30, dy: 0 },
           'Panama':   { dx: isMobile ? -20 : -30, dy: 0 },
-          'Iran':     { dx: isMobile ? -20 : -35, dy: 0 },
+          'Sierra Leone': { dx: isMobile ? -20 : -35, dy: 0 },
           'Other':    { dx: isMobile ?  15 :  20, dy: 0 },
         };
 
