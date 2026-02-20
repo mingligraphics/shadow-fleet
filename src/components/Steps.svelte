@@ -5,14 +5,13 @@
     $: steps = [
     `International maritime law requires every ship to be registered with a specific country—a flag
      state—granting it nationality. Many tankers use so-called flags of convenience to evade regulation.`,
-    `Shadow-fleet vessels are typically old and lack proper insurance. The mean age of a shadow fleet ship
-     is almost double the average for other tankers, based on data from the Brookings Institute.`,
+    `The mean age of a shadow fleet ship is almost double the average for other tankers, based on data from the Brookings Institute.`,
     `Larger tankers generally undertake longer voyages so they can carry more cargo. Smaller vessels can load and unload more quickly, making them more efficient for shorter journeys.
     <br><br><span style="display: block; color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 20px; margin-top:6px;">*Very Large Crude Carrier or Ultra Large Crude Carrier</span>`,
     `The West has imposed sanctions on thousands of entities tied to shadow-fleet tankers to punish Russia for its invasion of Ukraine. The joint efforts are aimed at crippling Russia's 
     oil and gas exports, which have powered Moscow's economic engine.
     <br><br><span style="display: block; color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 20px; margin-top:4px;">Note: Sanctions to a tanker can be issued by several authorities. First sanction by major authority shown.</span>`,
-    `In the latest round of sanctions, nearly 900 vessels were designated last year, more than five times as many as the year before.<br><br><span style="display: block; color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 20px; margin-top:6px;">Note: Latest sanctions shown</span>`
+    `In the latest round of sanctions, over 860 vessels were designated last year, more than five times as many as the year before.<br><br><span style="display: block; color: #727272;font-weight: 300; font-family: Retina, sans-serif;font-size: 13px;line-height: 20px; margin-top:6px;">Note: Latest sanctions shown</span>`
   ];
   
   </script>
