@@ -283,7 +283,8 @@
           .force('charge', forceManyBody().strength(chargeStrength));
         break;
         
-      case 2:
+      case 2: {
+        const mobileOffset = isMobile ? 30 : 0;
         simulation
           .force('x', forceX(d => {
             const angle = (d.sizeIndex / SIZE_GROUPS.length) * Math.PI * 2 - Math.PI / 2;
@@ -291,11 +292,12 @@
           }).strength(0.1))
           .force('y', forceY(d => {
             const angle = (d.sizeIndex / SIZE_GROUPS.length) * Math.PI * 2 - Math.PI / 2;
-            return height / 2 + Math.sin(angle) * (Math.min(width, height) * 0.25);
+            return height / 2 + mobileOffset + Math.sin(angle) * (Math.min(width, height) * 0.25);
           }).strength(0.1))
           .force('collide', forceCollide(3 * collisionScale))
           .force('charge', forceManyBody().strength(chargeStrength));
         break;
+      }
         
       case 3:
         simulation
@@ -414,6 +416,8 @@
         break;
         
       case 2: {
+        const mobileOffset = isMobile ? 30 : 0;
+
         const tonnageInfo = {
           'Handysize/Handymax': 'Carrying capacity: less than 400,000 barrels',
           'Aframax':            '750,000',
@@ -449,7 +453,7 @@
           const angle       = (i / SIZE_GROUPS.length) * Math.PI * 2 - Math.PI / 2;
           const labelRadius = Math.min(width, height) * 0.25;
           const cx          = width  / 2 + Math.cos(angle) * labelRadius;
-          const cy          = height / 2 + Math.sin(angle) * labelRadius;
+          const cy          = height / 2 + mobileOffset + Math.sin(angle) * labelRadius;
 
           const iconOffset      = iconOffsets[size]  || { dx: 0, dy: -(isMobile ? 14 : 28) };
           const labelOffset     = labelOffsets[size] || { dx: 0, dy: 0 };
